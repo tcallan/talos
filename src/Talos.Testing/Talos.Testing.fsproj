@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="JsonArb.fs" />
+    <Compile Include="KeyArb.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="FsCheck" Version="2.11.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Talos\Talos.fsproj" />
+  </ItemGroup>
+</Project>
