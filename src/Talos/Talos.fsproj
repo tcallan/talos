@@ -6,7 +6,7 @@
     <Authors>tcallan</Authors>
     <Copyright>Copyright © 2018 tcallan</Copyright>
     <VersionPrefix>1.0.0</VersionPrefix>
-    <VersionSuffix>beta2</VersionSuffix>
+    <VersionSuffix>beta3</VersionSuffix>
     <PackageLicenseUrl>https://github.com/tcallan/talos/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/tcallan/talos</PackageProjectUrl>
     <RepositoryUrl>https://github.com/tcallan/talos</RepositoryUrl>

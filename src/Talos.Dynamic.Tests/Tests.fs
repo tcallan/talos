@@ -3,12 +3,14 @@ module Tests
 open Xunit
 open Swensen.Unquote
 open Chiron
+module Json = Inference.Json
 open Talos.Patch
 open Talos.Pointer
 open Talos.Dynamic.Diff
 open Microsoft.AspNetCore.JsonPatch.Operations
 open Microsoft.AspNetCore.JsonPatch
 open Newtonsoft.Json
+open Newtonsoft.Json.Linq
 
 [<Fact>]
 let ``talosPatchToJsonPatch produces the correct result`` () =
@@ -119,3 +121,35 @@ let ``PatchWithJsonPatch produces correct result`` () =
             .Replace("/yep/prop", "bar")
 
     patchWithJsonPatch p orig =! {Yep = {Prop = "bar"}}
+
+[<Fact>]
+let ``Differ.Diff produces correct result`` () =
+    let a = {Yep = {Prop = "foo"}}
+    let b = {Yep = {Prop = "bar"}}
+
+    let differ = DifferBuilder().WithFilter(fun f -> f.Yep :> obj).Build()
+
+    let res = differ.Diff(a, b)
+
+    let op = Assert.Single(res.PatchOperations)
+    let expectedOp = Rep {
+        ChangePointer = Pointer [OKey "yep"]
+        ChangeValue = JsonObject.empty |> JsonObject.add "prop" (String "bar") |> Json.Encode.jsonObject
+    }
+
+    op =! expectedOp
+
+[<Fact>]
+let ``Differ.DiffToJsonPatch produces correct result`` () =
+    let a = {Yep = {Prop = "foo"}}
+    let b = {Yep = {Prop = "bar"}}
+
+    let differ = DifferBuilder().WithFilter(fun f -> f.Yep :> obj).Build()
+
+    let res = differ.DiffToJsonPatch(a, b)
+
+    let op = Assert.Single(res.Operations)
+
+    Assert.Equal(OperationType.Replace, op.OperationType)
+    Assert.Equal("/yep", op.path)
+    Assert.Equal<JObject>(JObject.FromObject({Prop = "bar"}), op.value :?> JObject)

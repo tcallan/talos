@@ -4,6 +4,8 @@ open Chiron
 open Patch
 open Pointer
 open Distance
+open Microsoft.FSharp.Quotations
+open Microsoft.FSharp.Quotations.Patterns
 
 module Diff =
     let rec private valueSize value = 
@@ -29,9 +31,26 @@ module Diff =
     let private check b v =
         if b then List.empty else v
 
-    let rec private workObject (Pointer p) (o1) (o2) =
+    let private filtersFor p pointers =
+        let filter op =
+            pointers
+            |> List.filter (fun (Pointer p) -> p |> List.tryHead = op)
+            |> List.map (fun (Pointer p) -> p |> List.tail |> Pointer)
+
+        match p with
+        | [] ->
+            pointers
+        | [op] ->
+            Some op |> filter
+        | _ ->
+            p |> List.tryLast |> filter
+
+    let rec private workObject (Pointer p) filters o1 o2 =
         let updatePointer (Pointer pp) =
             Pointer (p @ pp)
+
+        let myFilters =
+            filtersFor p filters
 
         let k1 = JsonObject.toPropertyList o1 |> List.map fst
         let k2 = JsonObject.toPropertyList o2 |> List.map fst
@@ -47,13 +66,15 @@ module Diff =
         let insertions = insKeys |> Seq.collect (fun k -> ins (Pointer [OKey k]) (get k o2))
 
         let chgKeys = k1 |> Set.ofSeq |> Set.intersect (Set.ofSeq k2)
-        let changes = chgKeys |> Seq.collect (fun k -> worker (Pointer [OKey k]) (get k o1) (get k o2))
+        let changes =
+            chgKeys |> Seq.collect
+                (fun k -> worker (Pointer [OKey k]) (myFilters) (get k o1) (get k o2))
 
         Seq.concat [deletions; insertions; changes]
         |> Seq.map (modifyPointer updatePointer)
         |> Seq.toList
 
-    and private workArray (Pointer p) a1 a2 =
+    and private workArray (Pointer p) filters a1 a2 =
         let updatePointer (Pointer pp) =
             Pointer (p @ pp)
 
@@ -86,11 +107,13 @@ module Diff =
                 else 1
             | _ -> 1
 
+        let myFilters = filtersFor p filters
+
         let param : Params<Json, Operation list, int> = {
             Equivalent = (=)
             Delete = fun i -> del (Pointer [AKey i])
             Insert = fun i -> ins (Pointer [AKey i])
-            Substitute = fun i -> worker (Pointer [AKey i])
+            Substitute = fun i -> worker (Pointer [AKey i]) myFilters
             Cost = Seq.sumBy operationCost
             PositionOffset = fun o -> o |> List.segmentWith related |> Seq.sumBy adv
         }
@@ -100,7 +123,7 @@ module Diff =
         |> Seq.map (modifyPointer updatePointer)
         |> Seq.toList
 
-    and private worker p v1 v2 =
+    and private worker p filters v1 v2 =
         match (v1, v2) with
         | (Null, Null) ->
             List.empty
@@ -111,14 +134,49 @@ module Diff =
         | (String s1, String s2) ->
             check (s1 = s2) <| rep p v2
         | (Array a1, Array a2) ->
-            workArray p a1 a2
+            if filters |> List.contains p
+            then
+                check (a1 = a2) <| rep p v2
+            else
+                workArray p filters a1 a2
         | (Object o1, Object o2) ->
-            workObject p o1 o2
+            if filters |> List.contains p
+            then
+                check (o1 = o2) <| rep p v2
+            else
+                workObject p filters o1 o2
         | _ -> rep p v2
 
+    [<CompiledName("DiffFiltered")>]
+    let diffFiltered filter v v' =
+        {PatchOperations = (worker Pointer.empty filter v v')}
+
+    let private quoteToFilter (quote : Expr) : Path =
+        let rec getPath path quote =
+            match quote with
+            | Lambda(_, body) ->
+                getPath path body
+            | PropertyGet(prev, info, _) ->
+                let path = (OKey info.Name :: path)
+                match prev with
+                | Some prev -> getPath path prev
+                | None -> path
+            | _ ->
+                path
+
+        getPath [] quote
+
+    let private quotesToFilters qfilters =
+        qfilters
+        |> Seq.map (quoteToFilter >> Pointer)
+        |> Seq.toList
+
+    [<CompiledName("DiffFilteredQ")>]
+    let diffFilteredQ qfilters v v' =
+        diffFiltered (quotesToFilters qfilters) v v'
+
     [<CompiledName("Diff")>]
-    let diff v v' =
-        {PatchOperations = (worker Pointer.empty v v')}
+    let diff v v' = diffFiltered List.empty v v'
 
     type private JsonResultBuilder() =
         member __.Bind(x, f) =

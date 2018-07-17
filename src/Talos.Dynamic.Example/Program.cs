@@ -1,9 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq.Expressions;
+using System.Runtime.Serialization;
 using Newtonsoft.Json;
 
 namespace Talos.Dynamic.Example
 {
-    internal class NestedContract {
+    internal class NestedContract
+    {
         [JsonProperty("prop")]
         public readonly string StringProp;
 
@@ -13,7 +17,8 @@ namespace Talos.Dynamic.Example
         }
     }
 
-    internal class Contract {
+    internal class Contract
+    {
         [JsonProperty("prop")]
         public readonly string Prop;
 
@@ -35,12 +40,18 @@ namespace Talos.Dynamic.Example
             var updated = new Contract("baz", new NestedContract("buz"));
 
             var patch = Diff.DiffToJsonPatch(original, updated);
-            Console.WriteLine(patch);
             Console.WriteLine(JsonConvert.SerializeObject(patch));
 
             var patched = Diff.PatchWithJsonPatch(patch, original);
             Console.WriteLine(JsonConvert.SerializeObject(original));
             Console.WriteLine(JsonConvert.SerializeObject(patched));
+
+            var differ = new Diff.DifferBuilder<Contract>()
+                .WithFilter(o => o)
+                .Build();
+
+            var patch2 = differ.DiffToJsonPatch(original, updated);
+            Console.WriteLine(JsonConvert.SerializeObject(patch2));
         }
     }
 }
