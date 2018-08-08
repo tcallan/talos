@@ -8,14 +8,19 @@ open System.Reflection
 module Json = Inference.Json
 
 module Diff =
+    let private jsonSerializerSettings =
+        JsonSerializerSettings(
+            DateParseHandling = DateParseHandling.DateTimeOffset,
+            DateTimeZoneHandling = DateTimeZoneHandling.RoundtripKind)
+
     let internal dynamicToJson o =
-        JsonConvert.SerializeObject o
+        JsonConvert.SerializeObject(o, jsonSerializerSettings)
         |> Json.parse
         |> JsonResult.getOrThrow
 
     let internal dynamicFromJson<'T> j =
         Json.format j
-        |> JsonConvert.DeserializeObject<'T>
+        |> fun json -> JsonConvert.DeserializeObject<'T>(json, jsonSerializerSettings)
 
     [<CompiledName("TalosPatchToJsonPatch")>]
     let talosPatchToJsonPatch (p : Talos.Patch.Patch) : JsonPatchDocument =

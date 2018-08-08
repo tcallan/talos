@@ -66,6 +66,21 @@ let ``jsonPatchToTalosPatch produces the correct result`` () =
     Assert.Contains(ops,
         fun op -> op = Tst {ChangePointer = Pointer [OKey "test"]; ChangeValue = String "value"})
 
+[<Fact>]
+let ``talosPatchToJsonPatch preserves timezone`` () =
+    let time = System.DateTimeOffset.FromUnixTimeSeconds(1533759265L).ToLocalTime()
+    let ops = [Add {ChangePointer = Pointer [OKey "test"]; ChangeValue = String (time.ToString("o"))}]
+    let p = {PatchOperations = ops}
+    let p' = talosPatchToJsonPatch p
+
+    let op = Assert.Single(p'.Operations)
+
+    Assert.IsType(typeof<System.DateTimeOffset>, op.value)
+
+    let dtoValue = op.value :?> System.DateTimeOffset
+
+    Assert.Equal(time.ToString("o"), dtoValue.ToString("o"))
+
 type SimpleContract = {
     [<JsonProperty("prop")>]
     Prop : string
@@ -153,3 +168,39 @@ let ``Differ.DiffToJsonPatch produces correct result`` () =
     Assert.Equal(OperationType.Replace, op.OperationType)
     Assert.Equal("/yep", op.path)
     Assert.Equal<JObject>(JObject.FromObject({Prop = "bar"}), op.value :?> JObject)
+
+type ArrayTest(vals : string array) =
+    member __.Vals with get() = vals
+
+[<Fact>]
+let ``diff handles arrays properly with differences`` () =
+    let a = ArrayTest([|"line1"|])
+    let b = ArrayTest([|"line1"; "line2"|])
+    let res = diff a b
+
+    let op = Assert.Single(res.PatchOperations)
+    let expected = Add { ChangePointer = Pointer [OKey "Vals"; AKey 1]; ChangeValue = String "line2"}
+
+    op =! expected
+
+[<Fact>]
+let ``diff handles arrays properly without differences`` () =
+    let a = ArrayTest([|"line1"|])
+    let b = ArrayTest([|"line1"|])
+    let res = diff a b
+
+    Assert.Empty(res.PatchOperations)
+
+[<Fact>]
+let ``patch handles arrays properly`` () =
+    let a = ArrayTest([||])
+    let p =
+        {PatchOperations =
+            [Add { ChangePointer = Pointer [OKey "Vals"; AKey 0]; ChangeValue = String "line1"}]}
+
+    let res = patch p a
+
+    res.Vals =! [|"line1"|]
+
+type DateTest(date : System.DateTimeOffset) =
+    member __.Date with get() = date
