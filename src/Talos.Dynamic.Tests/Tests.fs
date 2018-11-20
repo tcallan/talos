@@ -115,6 +115,85 @@ let ``Patch produces correct result`` () =
 
     patch p orig =! {Yep = {Prop = "bar"}}
 
+type NullableContact = {
+    MaybeProp : System.Nullable<int>
+}
+
+[<Fact>]
+let ``Diff produces correct result with non-null nullable`` () =
+    let a = { MaybeProp = System.Nullable(10)}
+    let b = { MaybeProp = System.Nullable(12)}
+
+    let res = diff a b
+
+    let op = Assert.Single(res.PatchOperations)
+
+    let expectedOp = Rep {
+        ChangePointer = Pointer [OKey "MaybeProp"]
+        ChangeValue = Number "12"
+    }
+
+    op =! expectedOp
+
+[<Fact>]
+let ``Diff produces correct result with nullable made null`` () =
+    let a = { MaybeProp = System.Nullable(10)}
+    let b = { MaybeProp = System.Nullable()}
+
+    let res = diff a b
+
+    let op = Assert.Single(res.PatchOperations)
+
+    let expectedOp = Rep {
+        ChangePointer = Pointer [OKey "MaybeProp"]
+        ChangeValue = Null
+    }
+
+    op =! expectedOp
+
+[<Fact>]
+let ``Diff produces correct result with nullable made not-null`` () =
+    let a = { MaybeProp = System.Nullable()}
+    let b = { MaybeProp = System.Nullable(12)}
+
+    let res = diff a b
+
+    let op = Assert.Single(res.PatchOperations)
+
+    let expectedOp = Rep {
+        ChangePointer = Pointer [OKey "MaybeProp"]
+        ChangeValue = Number "12"
+    }
+
+    op =! expectedOp
+
+[<Fact>]
+let ``Patch produces correct result with non-null nullable`` () =
+    let orig = { MaybeProp = System.Nullable(10)}
+    let p =
+        {PatchOperations =
+            [Rep {ChangePointer = Pointer [OKey "MaybeProp"]; ChangeValue = Number "12" }]}   
+
+    patch p orig =! { MaybeProp = System.Nullable(12)}
+
+[<Fact>]
+let ``Patch produces correct result with nullable made null`` () =
+    let orig = { MaybeProp = System.Nullable(10)}
+    let p =
+        {PatchOperations =
+            [Rep {ChangePointer = Pointer [OKey "MaybeProp"]; ChangeValue = Null }]}   
+
+    patch p orig =! { MaybeProp = System.Nullable()}
+
+[<Fact>]
+let ``Patch produces correct result with nullable made non-null`` () =
+    let orig = { MaybeProp = System.Nullable()}
+    let p =
+        {PatchOperations =
+            [Rep {ChangePointer = Pointer [OKey "MaybeProp"]; ChangeValue = Number "12" }]}   
+
+    patch p orig =! { MaybeProp = System.Nullable(12)}
+
 [<Fact>]
 let ``DiffToJsonPatch produces correct result`` () =
     let a = {Yep = {Prop = "foo"}}
@@ -136,6 +215,45 @@ let ``PatchWithJsonPatch produces correct result`` () =
             .Replace("/yep/prop", "bar")
 
     patchWithJsonPatch p orig =! {Yep = {Prop = "bar"}}
+
+[<Fact>]
+let ``DiffToJsonPatch produces correct result with non-null nullable`` () =
+    let a = { MaybeProp = System.Nullable(10)}
+    let b = { MaybeProp = System.Nullable(12)}
+
+    let res = diffToJsonPatch a b
+
+    let op = Assert.Single(res.Operations)
+    
+    Assert.Equal(OperationType.Replace, op.OperationType)
+    Assert.Equal("/MaybeProp", op.path)
+    Assert.Equal(System.Nullable(12 |> int64), op.value :?> System.Nullable<int64>)
+
+[<Fact>]
+let ``DiffToJsonPatch produces correct result with nullable made null`` () =
+    let a = { MaybeProp = System.Nullable(10)}
+    let b = { MaybeProp = System.Nullable()}
+
+    let res = diffToJsonPatch a b
+
+    let op = Assert.Single(res.Operations)
+    
+    Assert.Equal(OperationType.Replace, op.OperationType)
+    Assert.Equal("/MaybeProp", op.path)
+    Assert.Equal(System.Nullable(), op.value :?> System.Nullable<int>)
+
+[<Fact>]
+let ``DiffToJsonPatch produces correct result with nullable made non-null`` () =
+    let a = { MaybeProp = System.Nullable()}
+    let b = { MaybeProp = System.Nullable(12)}
+
+    let res = diffToJsonPatch a b
+
+    let op = Assert.Single(res.Operations)
+    
+    Assert.Equal(OperationType.Replace, op.OperationType)
+    Assert.Equal("/MaybeProp", op.path)
+    Assert.Equal(System.Nullable(12 |> int64), op.value :?> System.Nullable<int64>)
 
 [<Fact>]
 let ``Differ.Diff produces correct result`` () =
