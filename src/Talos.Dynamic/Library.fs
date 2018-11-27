@@ -57,6 +57,16 @@ module Diff =
     [<CompiledName("PatchWithJsonPatch")>]
     let patchWithJsonPatch p src =
         patch (jsonPatchToTalosPatch p) src
+
+    [<CompiledName("PatchWithJsonPatches")>]
+    let patchWithJsonPatches ps (src : 'T) =
+        let src' = dynamicToJson src
+
+        ps
+        |> Seq.map jsonPatchToTalosPatch
+        |> Seq.fold (fun src p -> Talos.Diff.patch p src |> JsonResult.getOrThrow) src'
+        |> dynamicFromJson<'T>
+
     let private tryCast<'a> : obj -> 'a option = function
         | :? 'a as x -> Some(x)
         | _ -> None
