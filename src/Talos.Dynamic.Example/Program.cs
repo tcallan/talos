@@ -45,13 +45,6 @@ namespace Talos.Dynamic.Example
             var patched = Diff.PatchWithJsonPatch(patch, original);
             Console.WriteLine(JsonConvert.SerializeObject(original));
             Console.WriteLine(JsonConvert.SerializeObject(patched));
-
-            var differ = new Diff.DifferBuilder<Contract>()
-                .WithFilter(o => o)
-                .Build();
-
-            var patch2 = differ.DiffToJsonPatch(original, updated);
-            Console.WriteLine(JsonConvert.SerializeObject(patch2));
         }
     }
 }
