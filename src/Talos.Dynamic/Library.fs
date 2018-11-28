@@ -2,64 +2,68 @@ namespace Talos.Dynamic
 open Newtonsoft.Json
 open Chiron
 open Microsoft.AspNetCore.JsonPatch
+open System.Runtime.InteropServices
 module Json = Inference.Json
 
-module Diff =
-    let private jsonSerializerSettings =
+[<AllowNullLiteral>]
+type DiffSettings() = 
+    member val SerializerSettings =
         JsonSerializerSettings(
             DateParseHandling = DateParseHandling.DateTimeOffset,
             DateTimeZoneHandling = DateTimeZoneHandling.RoundtripKind)
+        with get, set
 
-    let internal dynamicToJson o =
-        JsonConvert.SerializeObject(o, jsonSerializerSettings)
+    member val IgnoreErrors = false with get, set
+
+type Diff() =
+    static member private DynamicToJson (serializerSettings : JsonSerializerSettings) o =
+        JsonConvert.SerializeObject(o, serializerSettings)
         |> Json.parse
         |> JsonResult.getOrThrow
 
-    let internal dynamicFromJson<'T> j =
+    static member private DynamicFromJson<'T> (serializerSettings : JsonSerializerSettings) j =
         Json.format j
-        |> fun json -> JsonConvert.DeserializeObject<'T>(json, jsonSerializerSettings)
+        |> fun json -> JsonConvert.DeserializeObject<'T>(json, serializerSettings)
 
-    [<CompiledName("TalosPatchToJsonPatch")>]
-    let talosPatchToJsonPatch (p : Talos.Patch.Patch) : JsonPatchDocument =
+    static member private TalosPatchToJsonPatch serializerSettings (p : Talos.Patch.Patch) : JsonPatchDocument =
         p
         |> Json.encode
-        |> dynamicFromJson<JsonPatchDocument>
+        |> Diff.DynamicFromJson<JsonPatchDocument> serializerSettings
 
-    [<CompiledName("JsonPatchToTalosPatch")>]
-    let jsonPatchToTalosPatch (p : JsonPatchDocument) : Talos.Patch.Patch =
+    static member private JsonPatchToTalosPatch serializerSettings (p : JsonPatchDocument) : Talos.Patch.Patch =
         p
-        |> dynamicToJson
+        |> Diff.DynamicToJson serializerSettings
         |> Json.decode
         |> JsonResult.getOrThrow
 
-    [<CompiledName("Diff")>]
-    let diff src dst =
-        let src = dynamicToJson src
-        let dst = dynamicToJson dst
+    static member private Diff (settings : DiffSettings) src dst =
+        let src = Diff.DynamicToJson (settings.SerializerSettings) src
+        let dst = Diff.DynamicToJson (settings.SerializerSettings) dst
 
         Talos.Diff.diff src dst
 
-    [<CompiledName("Patch")>]
-    let patch p (src : 'T) =
-        let src = dynamicToJson src
+    static member private Patch (settings : DiffSettings) p (src : 'T) =
+        let src = Diff.DynamicToJson (settings.SerializerSettings) src
+        let patch = if settings.IgnoreErrors then Talos.Diff.patchForgiving else Talos.Diff.patch
 
-        Talos.Diff.patch p src
+        patch p src
         |> JsonResult.getOrThrow
-        |> dynamicFromJson<'T>
+        |> Diff.DynamicFromJson<'T> (settings.SerializerSettings)
 
-    [<CompiledName("DiffToJsonPatch")>]
-    let diffToJsonPatch src dst =
-        diff src dst |> talosPatchToJsonPatch
+    static member DiffToJsonPatch (src, dst, [<Optional; DefaultParameterValue(value = (null : DiffSettings))>]settings : DiffSettings) =
+        let settings = if isNull settings then DiffSettings() else settings
+        Diff.Diff settings src dst |> Diff.TalosPatchToJsonPatch (settings.SerializerSettings)
 
-    [<CompiledName("PatchWithJsonPatch")>]
-    let patchWithJsonPatch p src =
-        patch (jsonPatchToTalosPatch p) src
+    static member PatchWithJsonPatch (p : JsonPatchDocument, src, [<Optional; DefaultParameterValue(value = (null : DiffSettings))>]settings : DiffSettings) =
+        let settings = if isNull settings then DiffSettings() else settings
+        Diff.Patch settings (Diff.JsonPatchToTalosPatch (settings.SerializerSettings) p) src
 
-    [<CompiledName("PatchWithJsonPatches")>]
-    let patchWithJsonPatches ps (src : 'T) =
-        let src' = dynamicToJson src
+    static member PatchWithJsonPatches ((ps : JsonPatchDocument seq), src : 'T, [<Optional; DefaultParameterValue(value = (null : DiffSettings))>]settings : DiffSettings) : 'T =
+        let settings = if isNull settings then DiffSettings() else settings
+        let src' = Diff.DynamicToJson (settings.SerializerSettings) src
+        let patch = if settings.IgnoreErrors then Talos.Diff.patchForgiving else Talos.Diff.patch
 
         ps
-        |> Seq.map jsonPatchToTalosPatch
-        |> Seq.fold (fun src p -> Talos.Diff.patch p src |> JsonResult.getOrThrow) src'
-        |> dynamicFromJson<'T>
+        |> Seq.map (Diff.JsonPatchToTalosPatch (settings.SerializerSettings))
+        |> Seq.fold (fun src p -> patch p src |> JsonResult.getOrThrow) src'
+        |> Diff.DynamicFromJson (settings.SerializerSettings) 

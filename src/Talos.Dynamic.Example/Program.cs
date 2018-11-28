@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Runtime.Serialization;
+using Microsoft.AspNetCore.JsonPatch;
 using Newtonsoft.Json;
 
 namespace Talos.Dynamic.Example
@@ -45,6 +46,21 @@ namespace Talos.Dynamic.Example
             var patched = Diff.PatchWithJsonPatch(patch, original);
             Console.WriteLine(JsonConvert.SerializeObject(original));
             Console.WriteLine(JsonConvert.SerializeObject(patched));
+
+            var patchWithExtra = new JsonPatchDocument()
+                .Replace("/nested/prop", "bar")
+                .Replace("/does/not/exist", "buz");
+
+            var settings = new DiffSettings {
+                IgnoreErrors = true,
+            };
+            
+            Console.WriteLine(settings.SerializerSettings.DateParseHandling);
+            Console.WriteLine(settings.SerializerSettings.DateTimeZoneHandling);
+
+            // NOTE: this would error with IgnoreErrors set to true (the default)
+            var patchedWithExtra = Diff.PatchWithJsonPatch(patchWithExtra, original, settings);
+            Console.WriteLine(JsonConvert.SerializeObject(patchWithExtra));
         }
     }
 }

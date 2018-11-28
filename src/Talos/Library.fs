@@ -252,26 +252,37 @@ module Diff =
     }
 
     [<CompiledName("ApplyOperation")>]
-    let applyOperation op json =
+    let applyOperation ignoreErrors op json =
+        let filter = function
+            | JFail e -> if ignoreErrors then JPass json else JFail e
+            | result -> result
+
         match op with
         | Add {ChangePointer=path; ChangeValue=v} ->
-            applyAdd path v json
+            applyAdd path v json |> filter
         | Rem {ChangePointer=path} ->
-            applyRem path json
+            applyRem path json |> filter
         | Rep {ChangePointer=path; ChangeValue=v} ->
-            applyRep path v json
+            applyRep path v json |> filter
         | Tst {ChangePointer=path; ChangeValue=v} ->
+            // Test operations should fail even if ignoring errors
             applyTst path v json
         | Cpy {ChangePointer=path; FromPointer=from} ->
-            applyCpy path from json
+            applyCpy path from json |> filter
         | Mov {ChangePointer=path; FromPointer=from} ->
-            applyMov path from json
+            applyMov path from json |> filter
 
-    let private operationFolder state op = (applyOperation >> JsonResult.bind) op state
+    let private operationFolder ignoreErrors state op =
+        (applyOperation ignoreErrors >> JsonResult.bind) op state
 
-    [<CompiledName("Patch")>]
-    let patch p v =
+    let private patch' ignoreErrors p v =
         match p with
         | {PatchOperations = []} -> JPass v
         | {PatchOperations = ops} ->
-            List.fold (operationFolder) (JPass v) ops
+            List.fold (operationFolder ignoreErrors) (JPass v) ops
+
+    [<CompiledName("PatchForgiving")>]
+    let patchForgiving = patch' true
+
+    [<CompiledName("Patch")>]
+    let patch = patch' false

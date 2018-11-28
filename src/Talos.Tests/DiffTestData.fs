@@ -95,6 +95,8 @@ module Case3 =
     let error = 
         "Cannot delete missing object member at index \"missing\" in pointer \"/missing\""
 
+    let expected = original
+
 module Case4 =
     let original = """
     [ "hello"
@@ -108,6 +110,8 @@ module Case4 =
 
     let error =
         "Cannot delete missing array member at index 1 in pointer \"/1\""
+
+    let expected = original
 
 module CaseA1 =
     let original = """
@@ -437,6 +441,8 @@ module CaseA12 =
 
     let error = "Cannot insert missing object member at index \"baz\" in pointer \"/baz/bat\""
 
+    let expected = original
+
 module CaseA14 =
     let original = """
     {
@@ -515,3 +521,29 @@ module CaseA16 =
         ]
     }
     """
+
+module CaseF1 =
+    let original = """
+    {
+        "foo": {
+            "bar": "baz"
+        }
+    }
+    """
+
+    let patch = """
+    [
+        { "op": "replace", "path": "/foo/bar", "value": "new1"},
+        { "op": "replace", "path": "/foo/buz", "value": "new2"}
+    ]
+    """
+
+    let expected = """
+    {
+        "foo": {
+            "bar": "new1"
+        }
+    }
+    """
+
+    let error = "Cannot delete missing object member at index \"buz\" in pointer \"/foo/buz\""
