@@ -62,7 +62,7 @@ module Diff =
         let related o1 o2 =
             let (Pointer p1) = (changePointer o1)
             let (Pointer p2) = (changePointer o2)
-            match p1, p2 with
+            match (p1, p2) with
             | [_], [_] -> false
             | i1::_, i2::_ -> i1 = i2
             | _ -> failwith "Something went wrong"
@@ -131,14 +131,14 @@ module Diff =
 
         member __.ReturnFrom(x) = x
 
-    let private jsonResult = new JsonResultBuilder()
+    let private jsonResult = JsonResultBuilder()
 
     let private updateL i f l =
         let a = List.tryItem i l
         let a' = f a
-        match a, a' with
+        match (a, a') with
         | None, JPass None ->
-             JsonResult.pass l
+            JsonResult.pass l
         | Some _, JPass None ->
             List.remove i l |> JsonResult.pass
         | None, JPass (Some n) ->
@@ -192,7 +192,7 @@ module Diff =
 
     let private applyRem (Pointer path as from) =
         let rec go path v =
-            match path, v with
+            match (path, v) with
             | [], _ -> Null |> JsonResult.pass
             | [AKey i], Array v ->
                 let fn = function

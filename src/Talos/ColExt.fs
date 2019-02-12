@@ -10,7 +10,7 @@ module List =
             let zs = List.skipWhile (p x) xs
             (x::ys) :: segmentWithImpl p zs
 
-    let segmentWith (predicate : 'T -> 'T -> bool) (source : list<'T>) : list<list<'T>> = 
+    let segmentWith (predicate : 'T -> 'T -> bool) (source : 'T list) : 'T list list = 
         segmentWithImpl predicate source
 
     let insert v i (l : 'a list) =

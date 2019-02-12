@@ -58,7 +58,7 @@ type Diff() =
         let settings = if isNull settings then DiffSettings() else settings
         Diff.Patch settings (Diff.JsonPatchToTalosPatch (settings.SerializerSettings) p) src
 
-    static member PatchWithJsonPatches ((ps : JsonPatchDocument seq), src : 'T, [<Optional; DefaultParameterValue(value = (null : DiffSettings))>]settings : DiffSettings) : 'T =
+    static member PatchWithJsonPatches ((ps : seq<JsonPatchDocument>), src : 'T, [<Optional; DefaultParameterValue(value = (null : DiffSettings))>]settings : DiffSettings) : 'T =
         let settings = if isNull settings then DiffSettings() else settings
         let src' = Diff.DynamicToJson (settings.SerializerSettings) src
         let patch = if settings.IgnoreErrors then Talos.Diff.patchForgiving else Talos.Diff.patch

@@ -69,10 +69,10 @@ module rec Pointer =
             (fun x -> D.string x |> JsonResult.bind parsePointer)
 
     let toOptic p : Optics.Lens<Json, Json> =
-        let id = JPass, (fun a _ -> a)
+        let id = (JPass, fun a _ -> a)
 
         let index i : Optics.Lens<Json list, Json> =
-            List.item i >> JsonResult.pass, (fun _ l -> l)
+            (List.item i >> JsonResult.pass, fun _ l -> l)
 
         let jsonIndex i = Optics.compose Optics.Json.Array_ (index  i)
 

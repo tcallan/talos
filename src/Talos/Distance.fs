@@ -66,13 +66,13 @@ module Distance =
                 else
                     let c1 =
                         let c = p.Delete (position <| snd top) s
-                        p.Cost c + fst top, Some c :: snd top
+                        (p.Cost c + fst top, Some c :: snd top)
                     let c2 =
                         let c = p.Insert (position <| snd left) d
-                        p.Cost c + fst left, Some c :: snd left
+                        (p.Cost c + fst left, Some c :: snd left)
                     let c3 =
                         let c =p.Substitute (position <| snd tl) s d
-                        p.Cost c + fst tl, Some c :: snd tl
+                        (p.Cost c + fst tl, Some c :: snd tl)
 
                     List.minBy (fst) [c1; c2; c3]
 
