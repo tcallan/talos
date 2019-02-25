@@ -11,23 +11,45 @@ module E = Json.Encode
 module EI = Inference.Json.Encode
 module Json = Inference.Json
 
-type SimpleContract = {
-    prop : string
-}
+type DecimalContract = {
+    DecProp : decimal
+ }
 
-type SimpleContract with
-    static member ToJson (x : SimpleContract) = 
+type DecimalContract with
+    static member ToJson(x : DecimalContract) =
         E.buildWith (fun x jObj ->
             jObj
-            |> EI.required "prop" x.prop) x
+            |> EI.required "DecProp" x.DecProp) x
 
-type NestedContract = {
-    yep : SimpleContract
-}
+type IntContract = {
+    IntProp : int32
+ }
 
-type NestedContract with
-    static member ToJson (x : NestedContract) =
-        EI.required "yep" x.yep
+type IntContract with
+    static member ToJson(x : IntContract) =
+        E.buildWith (fun x jObj ->
+            jObj
+            |> EI.required "IntProp" x.IntProp) x
+
+type LongContract = {
+    LongProp : int64
+ }
+
+type LongContract with
+    static member ToJson(x : LongContract) =
+        E.buildWith (fun x jObj ->
+            jObj
+            |> EI.required "LongProp" x.LongProp) x
+
+type FloatContract = {
+    FloatProp : float
+ }
+
+type FloatContract with
+    static member ToJson(x : FloatContract) =
+        E.buildWith (fun x jObj ->
+            jObj
+            |> EI.required "FloatProp" x.FloatProp) x
 
 let parseUnsafe json = json |> Json.parse |> JsonResult.getOrThrow
 let inline deserializeUnsafe json = json |> Json.deserialize |> JsonResult.getOrThrow
@@ -172,3 +194,55 @@ let ``updating a non-existent property works (forgiving)`` () =
 [<Fact>]
 let ``updating a non-existent property fails`` () =
     assertPatchFailure CaseF1.original CaseF1.patch CaseF1.error
+
+[<Property>]
+let ``diff of identical decimal values is empty`` n =
+    let a = { DecProp = n } |> Json.encode
+    let b = { DecProp = n } |> Json.encode
+    diff a b = { PatchOperations = [] }
+
+[<Property>]
+let ``diff of different decimal values is not empty`` n1 n2 =
+    let a = { DecProp = n1 } |> Json.encode
+    let b = { DecProp = n2 } |> Json.encode
+    let res = diff a b
+    n1 = n2 || res.PatchOperations |> List.length = 1
+
+[<Property>]
+let ``diff of identical integer values is empty`` n =
+    let a = { IntProp = n } |> Json.encode
+    let b = { IntProp = n } |> Json.encode
+    diff a b = { PatchOperations = [] }
+
+[<Property>]
+let ``diff of different integer values is not empty`` n1 n2 =
+    let a = { IntProp = n1 } |> Json.encode
+    let b = { IntProp = n2 } |> Json.encode
+    let res = diff a b
+    n1 = n2 || res.PatchOperations |> List.length = 1
+
+[<Property>]
+let ``diff of identical long values is empty`` n =
+    let a = { LongProp = n } |> Json.encode
+    let b = { LongProp = n } |> Json.encode
+    diff a b = { PatchOperations = [] }
+
+[<Property>]
+let ``diff of different long values is not empty`` n1 n2 =
+    let a = { LongProp = n1 } |> Json.encode
+    let b = { LongProp = n2 } |> Json.encode
+    let res = diff a b
+    n1 = n2 || res.PatchOperations |> List.length = 1
+
+[<Property>]
+let ``diff of identical float values is empty`` n =
+    let a = { FloatProp = n } |> Json.encode
+    let b = { FloatProp = n } |> Json.encode
+    diff a b = { PatchOperations = [] }
+
+[<Property>]
+let ``diff of different float values is not empty`` n1 n2 =
+    let a = { FloatProp = n1 } |> Json.encode
+    let b = { FloatProp = n2 } |> Json.encode
+    let res = diff a b
+    n1 = n2 || res.PatchOperations |> List.length = 1

@@ -23,6 +23,22 @@ type NullableContact = {
     MaybeProp : System.Nullable<int>
 }
 
+type DecimalContract = {
+    DecProp : decimal
+}
+
+type IntContract = {
+    IntProp : int32
+}
+
+type LongContract = {
+    LongProp : int64
+}
+
+type FloatContract = {
+    FloatProp : float
+}
+
 [<Fact>]
 let ``DiffToJsonPatch produces correct result`` () =
     let a = {Yep = {Prop = "foo"}}
@@ -83,6 +99,78 @@ let ``DiffToJsonPatch produces correct result with nullable made non-null`` () =
     Assert.Equal(OperationType.Replace, op.OperationType)
     Assert.Equal("/MaybeProp", op.path)
     Assert.Equal(System.Nullable(12 |> int64), op.value :?> System.Nullable<int64>)
+
+[<Fact>]
+let ``DiffToJsonPatch produces correct result for decimal values`` () =
+    let a = { DecProp = 50m }
+    let b = { DecProp = 50.00m }
+
+    let res = Diff.DiffToJsonPatch (a, b)
+
+    Assert.Empty(res.Operations)
+
+[<Fact>]
+let ``DiffToJsonPatch produces correct result for distinct decimal values`` () =
+    let a = { DecProp = 50m }
+    let b = { DecProp = 50.01m }
+
+    let res = Diff.DiffToJsonPatch (a, b)
+
+    Assert.Single(res.Operations)
+
+[<Fact>]
+let ``DiffToJsonPatch produces correct result for int32 values`` () =
+    let a = { IntProp = 50 }
+    let b = { IntProp = 50 }
+
+    let res = Diff.DiffToJsonPatch (a, b)
+
+    Assert.Empty(res.Operations)
+
+[<Fact>]
+let ``DiffToJsonPatch produces correct result for distinct int32 values`` () =
+    let a = { IntProp = 50 }
+    let b = { IntProp = 51 }
+
+    let res = Diff.DiffToJsonPatch (a, b)
+
+    Assert.Single(res.Operations)
+
+[<Fact>]
+let ``DiffToJsonPatch produces correct result for int64 values`` () =
+    let a = { LongProp = 50L }
+    let b = { LongProp = 50L }
+
+    let res = Diff.DiffToJsonPatch (a, b)
+
+    Assert.Empty(res.Operations)
+
+[<Fact>]
+let ``DiffToJsonPatch produces correct result for distinct int64 values`` () =
+    let a = { LongProp = 50L }
+    let b = { LongProp = 51L }
+
+    let res = Diff.DiffToJsonPatch (a, b)
+
+    Assert.Single(res.Operations)
+
+[<Fact>]
+let ``DiffToJsonPatch produces correct result for float values`` () =
+    let a = { FloatProp = 50.0 }
+    let b = { FloatProp = 50.00 }
+
+    let res = Diff.DiffToJsonPatch (a, b)
+
+    Assert.Empty(res.Operations)
+
+[<Fact>]
+let ``DiffToJsonPatch produces correct result for distinct float values`` () =
+    let a = { FloatProp = 50.0 }
+    let b = { FloatProp = 50.01 }
+
+    let res = Diff.DiffToJsonPatch (a, b)
+
+    Assert.Single(res.Operations)
 
 [<Fact>]
 let ``PatchWithJsonPatch respects IgnoreErrors`` () =

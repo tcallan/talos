@@ -4,6 +4,7 @@ open Chiron
 open Patch
 open Pointer
 open Distance
+module D = Json.Decode
 
 module Diff =
     let rec private valueSize value = 
@@ -109,7 +110,11 @@ module Diff =
         | (Bool b1, Bool b2) ->
             check (b1 = b2) <| rep p v2
         | (Number n1, Number n2) ->
-            check (n1 = n2) <| rep p v2
+            match (D.decimal v1, D.decimal v2) with
+            | (JPass d1, JPass d2) ->
+                check (d1 = d2) <| rep p v2
+            | _ ->
+                check (n1 = n2) <| rep p v2
         | (String s1, String s2) ->
             check (s1 = s2) <| rep p v2
         | (Array a1, Array a2) ->
