@@ -4,7 +4,7 @@ module Distance =
     // NOTE: using an array internally for performance reasons
     // Changing the following to reference Seq<'a> or List<'a> demonstrates that the code correctly
     // treats the collection as immutable, but with a performance hit (particularly for Seq<'a>).
-    type private Matrix<'a> = 'a[]
+    type private Matrix<'a> = 'a []
 
     module private Matrix =
         let append = Array.append
@@ -71,10 +71,10 @@ module Distance =
                         let c = p.Insert (position <| snd left) d
                         (p.Cost c + fst left, Some c :: snd left)
                     let c3 =
-                        let c =p.Substitute (position <| snd tl) s d
+                        let c = p.Substitute (position <| snd tl) s d
                         (p.Cost c + fst tl, Some c :: snd tl)
 
-                    List.minBy (fst) [c1; c2; c3]
+                    List.minBy (fst) [ c1; c2; c3 ]
 
         let mutable result = Matrix.empty
 

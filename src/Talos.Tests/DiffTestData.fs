@@ -92,7 +92,7 @@ module Case3 =
     ]
     """
 
-    let error = 
+    let error =
         "Cannot delete missing object member at index \"missing\" in pointer \"/missing\""
 
     let expected = original

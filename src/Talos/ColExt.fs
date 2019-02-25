@@ -5,12 +5,12 @@ open System
 module List =
     let rec private segmentWithImpl p = function
         | [] -> []
-        | x::xs ->
+        | x :: xs ->
             let ys = List.takeWhile (p x) xs
             let zs = List.skipWhile (p x) xs
-            (x::ys) :: segmentWithImpl p zs
+            (x :: ys) :: segmentWithImpl p zs
 
-    let segmentWith (predicate : 'T -> 'T -> bool) (source : 'T list) : 'T list list = 
+    let segmentWith (predicate : 'T -> 'T -> bool) (source : 'T list) : 'T list list =
         segmentWithImpl predicate source
 
     let insert v i (l : 'a list) =

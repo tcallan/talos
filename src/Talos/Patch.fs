@@ -48,9 +48,8 @@ module Patch =
         | Rem of RemOp
         | Rep of RepOp
         | Tst of TstOp
-        with
 
-        static member ToJson (x : Operation) : Json =
+        static member ToJson(x : Operation) : Json =
             E.jsonObjectWith (fun x jObj ->
                 match x with
                 | Add a ->
@@ -58,7 +57,7 @@ module Patch =
                     |> EI.required "op" "add"
                     |> EI.required "path" a.ChangePointer
                     |> EI.required "value" a.ChangeValue
-                | Cpy c -> 
+                | Cpy c ->
                     jObj
                     |> EI.required "op" "copy"
                     |> EI.required "path" c.ChangePointer
@@ -84,7 +83,7 @@ module Patch =
                     |> EI.required "value" t.ChangeValue
             ) x
 
-        static member FromJson (_x : Operation) : Decoder<Json, Operation> =
+        static member FromJson(_x : Operation) : Decoder<Json, Operation> =
             let assertOp (op : string) =
                 DI.required "op"
                 >=> D.assertThat ((=) op) "wrong op"
@@ -94,61 +93,61 @@ module Patch =
                 do! assertOp "add"
                 let! p = DI.required "path"
                 let! v = DI.required "value"
-                return Add {ChangePointer=p; ChangeValue=v}
+                return Add { ChangePointer = p; ChangeValue = v }
             }
             let cpy = jsonDecoder {
                 do! assertOp "copy"
                 let! p = DI.required "path"
                 let! f = DI.required "from"
-                return Cpy {ChangePointer=p; FromPointer=f}
+                return Cpy { ChangePointer = p; FromPointer = f }
             }
             let mov = jsonDecoder {
                 do! assertOp "move"
                 let! p = DI.required "path"
                 let! f = DI.required "from"
-                return Mov {ChangePointer=p; FromPointer=f}
+                return Mov { ChangePointer = p; FromPointer = f }
             }
             let rem = jsonDecoder {
                 do! assertOp "remove"
                 let! p = DI.required "path"
-                return Rem {ChangePointer=p}
+                return Rem { ChangePointer = p }
             }
             let rep = jsonDecoder {
                 do! assertOp "replace"
                 let! p = DI.required "path"
                 let! v = DI.required "value"
-                return Rep {ChangePointer=p; ChangeValue=v}
+                return Rep { ChangePointer = p; ChangeValue = v }
             }
             let tst = jsonDecoder {
                 do! assertOp "test"
                 let! p = DI.required "path"
                 let! v = DI.required "value"
-                return Tst {ChangePointer=p; ChangeValue=v}
+                return Tst { ChangePointer = p; ChangeValue = v }
             }
-            D.oneOf [add; cpy; mov; rem; rep; tst]
+            D.oneOf [ add; cpy; mov; rem; rep; tst ]
 
     let changePointer = function
-        | Add {ChangePointer=c} -> c
-        | Cpy {ChangePointer=c} -> c
-        | Mov {ChangePointer=c} -> c
-        | Rem {ChangePointer=c} -> c
-        | Rep {ChangePointer=c} -> c
-        | Tst {ChangePointer=c} -> c
+        | Add { ChangePointer = c } -> c
+        | Cpy { ChangePointer = c } -> c
+        | Mov { ChangePointer = c } -> c
+        | Rem { ChangePointer = c } -> c
+        | Rep { ChangePointer = c } -> c
+        | Tst { ChangePointer = c } -> c
 
-    type Patch = { PatchOperations : Operation list }
-        with
+    type Patch =
+        { PatchOperations : Operation list }
 
-        static member ToJson (x : Patch) : Json =
+        static member ToJson(x : Patch) : Json =
             Json.encode x.PatchOperations
 
-        static member FromJson (_ : Patch) : Decoder<Json, Patch> =
-            D.listWith Json.decode >> JsonResult.map (fun a -> {PatchOperations = a})
+        static member FromJson(_ : Patch) : Decoder<Json, Patch> =
+            D.listWith Json.decode >> JsonResult.map (fun a -> { PatchOperations = a })
 
     [<CompiledName("ModifyPointer")>]
     let modifyPointer f = function
-        | Add o -> Add { o with ChangePointer = f o.ChangePointer}
-        | Cpy o -> Cpy { o with ChangePointer = f o.ChangePointer; FromPointer = f o.FromPointer}
-        | Mov o -> Mov { o with ChangePointer = f o.ChangePointer; FromPointer = f o.FromPointer}
-        | Rem o -> Rem { o with ChangePointer = f o.ChangePointer}
-        | Rep o -> Rep { o with ChangePointer = f o.ChangePointer}
-        | Tst o -> Tst { o with ChangePointer = f o.ChangePointer}
+        | Add o -> Add { o with ChangePointer = f o.ChangePointer }
+        | Cpy o -> Cpy { o with ChangePointer = f o.ChangePointer; FromPointer = f o.FromPointer }
+        | Mov o -> Mov { o with ChangePointer = f o.ChangePointer; FromPointer = f o.FromPointer }
+        | Rem o -> Rem { o with ChangePointer = f o.ChangePointer }
+        | Rep o -> Rep { o with ChangePointer = f o.ChangePointer }
+        | Tst o -> Tst { o with ChangePointer = f o.ChangePointer }

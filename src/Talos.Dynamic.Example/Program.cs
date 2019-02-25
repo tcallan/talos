@@ -57,7 +57,7 @@ namespace Talos.Dynamic.Example
 
             // NOTE: this would error with IgnoreErrors set to true (the default)
             var patchedWithExtra = Diff.PatchWithJsonPatch(patchWithExtra, original, settings);
-            Console.WriteLine(JsonConvert.SerializeObject(patchWithExtra));
+            Console.WriteLine(JsonConvert.SerializeObject(patchedWithExtra));
         }
     }
 }

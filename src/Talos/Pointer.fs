@@ -11,13 +11,12 @@ module rec Pointer =
         | OKey of string
         | AKey of int
 
-    with
-        static member ToJson (x : Key) : Json =
+        static member ToJson(x : Key) : Json =
             match x with
             | OKey n -> E.string n
             | AKey i -> E.number (string i)
 
-        static member FromJson (_ : Key) : Decoder<Json, Key> =
+        static member FromJson(_ : Key) : Decoder<Json, Key> =
             D.either
                 (D.string >> JsonResult.map OKey)
                 (D.int >> JsonResult.map AKey)
@@ -38,7 +37,6 @@ module rec Pointer =
         | Pointer [] -> ""
         | Pointer path ->
             "/" + String.concat "/" (List.map formatPath path)
-
 
     type Pointer =
         | Pointer of Path
@@ -62,10 +60,10 @@ module rec Pointer =
         |> JsonResult.pass
 
     type Pointer with
-        static member ToJson (x : Pointer) : Json =
+        static member ToJson(x : Pointer) : Json =
             E.string (formatPointer x)
 
-        static member FromJson (_ : Pointer) : Decoder<Json, Pointer> =
+        static member FromJson(_ : Pointer) : Decoder<Json, Pointer> =
             (fun x -> D.string x |> JsonResult.bind parsePointer)
 
     let toOptic p : Optics.Lens<Json, Json> =
@@ -74,15 +72,15 @@ module rec Pointer =
         let index i : Optics.Lens<Json list, Json> =
             (List.item i >> JsonResult.pass, fun _ l -> l)
 
-        let jsonIndex i = Optics.compose Optics.Json.Array_ (index  i)
+        let jsonIndex i = Optics.compose Optics.Json.Array_ (index i)
 
         let rec getLens p =
             match p with
             | Pointer [] ->
                 id
-            | Pointer (AKey i :: path) ->
+            | Pointer(AKey i :: path) ->
                 Optics.compose (jsonIndex i) (getLens (Pointer path))
-            | Pointer (OKey n :: path) ->
+            | Pointer(OKey n :: path) ->
                 Optics.compose (Optics.Json.Property_ n) (getLens (Pointer path))
         getLens p
 
@@ -93,9 +91,9 @@ module rec Pointer =
         match pointer with
         | Pointer [] ->
             JsonResult.raise <| exn "Cannot follow empty pointer"
-        | Pointer (key::_ as path) ->
+        | Pointer(key :: _ as path) ->
             let ty =
-                match key with 
+                match key with
                 | AKey _ -> "array"
                 | OKey _ -> "object"
 

@@ -13,7 +13,7 @@ let inline rt (x : 'a) =
     x |> Json.serialize |> Json.deserialize |> JsonResult.getOrThrow
 
 [<Fact>]
-let ``Key serialization works`` () =
+let ``Key serialization works``() =
     let o = Json.serialize (OKey "test")
     Assert.Equal("\"test\"", o)
 
@@ -21,7 +21,7 @@ let ``Key serialization works`` () =
     Assert.Equal("12", a)
 
 [<Fact>]
-let ``Key deserialization works`` () =
+let ``Key deserialization works``() =
     let o : Key = Json.deserialize ("\"test\"") |> JsonResult.getOrThrow
     Assert.Equal(OKey "test", o)
     let a : Key = Json.deserialize ("12") |> JsonResult.getOrThrow
@@ -34,32 +34,32 @@ let ``Key serialization round trips`` (key : Key) =
 let pointerTestCases =
     [
         "\"\"", []
-        "\"/\"", [OKey ""]
-        "\"/ \"", [OKey " "]
-        "\"/foo\"", [OKey "foo"]
-        "\"/foo/0\"", [OKey "foo"; AKey 0]
-        "\"/a~1b\"", [OKey "a/b"]
-        "\"/c%d\"", [OKey "c%d"]
-        "\"/e^f\"", [OKey "e^f"]
-        "\"/g|h\"", [OKey "g|h"]
-        "\"/i\\\\j\"", [OKey "i\\j"]
-        "\"/k\\\"l\"", [OKey "k\"l"]
-        "\"/m~0n\"", [OKey "m~n"]
-        "\"/ 0\"", [OKey " 0"]
-        "\"/0 \"", [OKey "0 "]
+        "\"/\"", [ OKey "" ]
+        "\"/ \"", [ OKey " " ]
+        "\"/foo\"", [ OKey "foo" ]
+        "\"/foo/0\"", [ OKey "foo"; AKey 0 ]
+        "\"/a~1b\"", [ OKey "a/b" ]
+        "\"/c%d\"", [ OKey "c%d" ]
+        "\"/e^f\"", [ OKey "e^f" ]
+        "\"/g|h\"", [ OKey "g|h" ]
+        "\"/i\\\\j\"", [ OKey "i\\j" ]
+        "\"/k\\\"l\"", [ OKey "k\"l" ]
+        "\"/m~0n\"", [ OKey "m~n" ]
+        "\"/ 0\"", [ OKey " 0" ]
+        "\"/0 \"", [ OKey "0 " ]
     ]
 
 [<Fact>]
-let ``Pointer serialization works`` () =
+let ``Pointer serialization works``() =
     pointerTestCases
-    |> List.iter (fun (expected, path) -> 
+    |> List.iter (fun (expected, path) ->
         Assert.Equal(expected, Json.serialize (Pointer path)))
 
 [<Fact>]
-let ``Pointer deserialization works`` () =
+let ``Pointer deserialization works``() =
     pointerTestCases
     |> List.iter (fun (pointer, expected) ->
-        Assert.Equal(Pointer expected, Json.deserialize(pointer) |> JsonResult.getOrThrow))
+        Assert.Equal(Pointer expected, Json.deserialize (pointer) |> JsonResult.getOrThrow))
 
 [<Property(Arbitrary = [| typeof<Arbitrary> |])>]
 let ``Pointer serialization round trips`` (pointer : Pointer) =
