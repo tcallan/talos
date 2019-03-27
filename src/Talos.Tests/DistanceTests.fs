@@ -60,8 +60,24 @@ let ``Identical documents sample 2``() =
     Assert.Equal((0, Seq.empty), leastChanges str "" "")
 
 [<Fact>]
-let ``Identical documents performance sanity check``() =
+let ``Identical documents performance sanity check 100``() =
     let longString = String.replicate 100 "a"
+    let sw = Stopwatch.StartNew()
+    leastChanges str longString longString |> ignore
+    sw.Stop()
+    Assert.True(sw.Elapsed < TimeSpan.FromMilliseconds(200.), sprintf "too slow %A" sw.Elapsed)
+
+[<Fact>]
+let ``Identical documents performance sanity check 200``() =
+    let longString = String.replicate 200 "a"
+    let sw = Stopwatch.StartNew()
+    leastChanges str longString longString |> ignore
+    sw.Stop()
+    Assert.True(sw.Elapsed < TimeSpan.FromMilliseconds(200.), sprintf "too slow %A" sw.Elapsed)
+
+[<Fact>]
+let ``Identical documents performance sanity check 300``() =
+    let longString = String.replicate 300 "a"
     let sw = Stopwatch.StartNew()
     leastChanges str longString longString |> ignore
     sw.Stop()

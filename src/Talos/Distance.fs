@@ -84,7 +84,16 @@ module Distance =
 
         result
 
+    let private shortcircuit p src dst =
+        let cmp a b = if p.Equivalent a b then 0 else 1
+        match Seq.compareWith cmp src dst with
+        | 0 -> true
+        | _ -> false
+
     [<CompiledName("LeastChanges")>]
     let leastChanges p src dst =
-        let (cost, ops) = rawChanges p src dst |> Seq.last
-        (cost, ops |> Seq.filter (Option.isSome) |> Seq.map (Option.get) |> Seq.rev)
+        if shortcircuit p src dst
+        then (0, Seq.empty)
+        else 
+            let (cost, ops) = rawChanges p src dst |> Seq.last
+            (cost, ops |> Seq.filter (Option.isSome) |> Seq.map (Option.get) |> Seq.rev)

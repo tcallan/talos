@@ -4,6 +4,7 @@ open Xunit
 open Swensen.Unquote
 open Chiron
 module Json = Inference.Json
+open System
 open Talos.Dynamic
 open Microsoft.AspNetCore.JsonPatch.Operations
 open Microsoft.AspNetCore.JsonPatch
@@ -37,6 +38,10 @@ type LongContract = {
 
 type FloatContract = {
     FloatProp : float
+ }
+ 
+ type DateContract = {
+     DateProp : DateTimeOffset
  }
 
 [<Fact>]
@@ -170,6 +175,15 @@ let ``DiffToJsonPatch produces correct result for distinct float values``() =
 
     let res = Diff.DiffToJsonPatch(a, b)
 
+    Assert.Single(res.Operations)
+    
+[<Fact>]
+let ``DiffToJsonPatch produces correct result for distinct DateTimeOffset values``()=
+    let a = { DateProp = DateTimeOffset.Parse("2019-02-27T07:50:00-06:00") }
+    let b = { DateProp = DateTimeOffset.Parse("2019-02-27T01:50:00-06:00") }
+    
+    let res = Diff.DiffToJsonPatch(a, b)
+    
     Assert.Single(res.Operations)
 
 [<Fact>]
