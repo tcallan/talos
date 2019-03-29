@@ -4,7 +4,7 @@
     <Description>Generate and apply diffs between JSON documents</Description>
     <Copyright>Copyright © 2018 tcallan</Copyright>
     <VersionPrefix>1.0.0</VersionPrefix>
-    <VersionSuffix>beta6</VersionSuffix>
+    <VersionSuffix>beta7</VersionSuffix>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/tcallan/talos</PackageProjectUrl>
     <RepositoryUrl>https://github.com/tcallan/talos</RepositoryUrl>
