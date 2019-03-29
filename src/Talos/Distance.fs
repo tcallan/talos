@@ -1,18 +1,6 @@
 namespace Talos
 
 module Distance =
-    // NOTE: using an array internally for performance reasons
-    // Changing the following to reference Seq<'a> or List<'a> demonstrates that the code correctly
-    // treats the collection as immutable, but with a performance hit (particularly for Seq<'a>).
-    type private Matrix<'a> = 'a []
-
-    module private Matrix =
-        let append = Array.append
-        let empty = Array.empty
-        let length = Array.length
-        let singleton = Array.singleton
-        let tryItem = Array.tryItem
-
     let private (/%) x y = (x / y, x % y)
 
     let private (|Pred|) x = x - 1
@@ -36,15 +24,15 @@ module Distance =
 
         let get m x y =
             let i = ix x y
-            match m |> Matrix.tryItem i with
+            match m |> Array.tryItem i with
             | Some result -> result
             | None -> failwith <| sprintf "Unable to get (%i, %i) from changes" x y
 
         let position ops =
             ops |> Seq.sumBy (fun op -> op |> Option.map (p.PositionOffset) |> Option.defaultValue 1)
 
-        let ctr (v : Matrix<_>) =
-            match (v |> Matrix.length) /% lenY with
+        let ctr ix (v : array<_>) =
+            match ix /% lenY with
             | (0, 0) ->
                 (0, List.empty)
             | (0, Pred y) ->
@@ -76,11 +64,10 @@ module Distance =
 
                     List.minBy (fst) [ c1; c2; c3 ]
 
-        let mutable result = Matrix.empty
+        let result = Array.replicate lenN (0, List.empty)
 
-        for _ in 0..(lenN - 1) do
-            let next = ctr result
-            result <- (Matrix.append result (Matrix.singleton next))
+        for ix in 0..(lenN - 1) do
+            result.[ix] <- ctr ix result
 
         result
 
